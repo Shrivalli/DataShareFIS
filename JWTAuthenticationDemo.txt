@@ -1,0 +1,58 @@
+JWT Authentication:
+
+1. Add a new controller -> AuthController
+
+ [ApiController]
+    [Route("api/[controller]")]
+    public class AuthController : Controller
+    {
+        [HttpPost("token")]
+        public ActionResult GetToken()
+        {
+            //secret key
+            string seckey = "this_is_our_long_string_security_key_token_for_our_project";
+            var symmetricsecuritykey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(seckey));
+            var signingCredentials = new SigningCredentials(symmetricsecuritykey, SecurityAlgorithms.HmacSha256Signature);
+
+            var token = new JwtSecurityToken(
+                issuer: "sme.in",
+                audience: "readers",
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: signingCredentials
+                );
+            return Ok(new JwtSecurityTokenHandler().WriteToken(token));
+
+          
+        }
+       
+    }
+
+2. In Startup.cs
+
+In Configure method()
+{
+     app.UseAuthentication();
+}
+
+3. In ConfigureServices method()
+{
+   string seckey = "this_is_our_long_string_security_key_token_for_our_project";
+            var symmetricsecuritykey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(seckey));
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                { 
+                             options.TokenValidationParameters = new TokenValidationParameters
+                             {
+                             ValidateIssuer = true,
+                             ValidateAudience = true,
+                             ValidateIssuerSigningKey = true,
+                             ValidIssuer = "sme.in",
+                             ValidAudience = "readers",
+                             IssuerSigningKey = symmetricsecuritykey
+                             };
+                });
+}
+
+4. In ValuesController 
+
+give [Authorize] above the controller name
